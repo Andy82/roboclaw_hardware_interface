@@ -75,9 +75,17 @@ CallbackReturn RoboClawHardwareInterface::on_init(const HardwareInfo & hardware_
   status_publisher_ = status_node_->create_publisher<msg::MotorControllerState>(
     "roboclaw/status", rclcpp::SystemDefaultsQoS());
 
-  diag_updater_ = std::make_unique<diagnostic_updater::Updater>(status_node_);
-  diag_updater_->setHardwareID(serial_port);
-  diag_updater_->add("RoboClaw Status", this, &RoboClawHardwareInterface::produce_diagnostics);
+  // Diagnostics can be disabled via hardware parameter "diagnostics_enabled" (default: true)
+  auto diag_param = hardware_info.hardware_parameters.find("diagnostics_enabled");
+  if (diag_param != hardware_info.hardware_parameters.end()) {
+    diagnostics_enabled_ = parse_bool_param(diag_param->second, true);
+  }
+
+  if (diagnostics_enabled_) {
+    diag_updater_ = std::make_unique<diagnostic_updater::Updater>(status_node_);
+    diag_updater_->setHardwareID(serial_port);
+    diag_updater_->add("RoboClaw Status", this, &RoboClawHardwareInterface::produce_diagnostics);
+  }
 
   start_status_thread();
 
@@ -388,6 +396,19 @@ void RoboClawHardwareInterface::produce_diagnostics(
   stat.add("Main battery (V)", snapshot.main_battery_voltage);
   stat.add("Logic battery (V)", snapshot.logic_battery_voltage);
   stat.add("Temperature (C)", snapshot.temperature);
+}
+
+bool RoboClawHardwareInterface::parse_bool_param(const std::string & value, bool default_value)
+{
+  std::string lower = value;
+  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+  if (lower == "true" || lower == "1" || lower == "yes" || lower == "on") {
+    return true;
+  }
+  if (lower == "false" || lower == "0" || lower == "no" || lower == "off") {
+    return false;
+  }
+  return default_value;
 }
 
 }  // namespace roboclaw_hardware_interface

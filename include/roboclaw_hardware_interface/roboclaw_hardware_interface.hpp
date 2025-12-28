@@ -172,6 +172,12 @@ private:
 
   /// Fill diagnostic status
   void produce_diagnostics(diagnostic_updater::DiagnosticStatusWrapper & stat);
+
+  /// Enable or disable diagnostics publication
+  bool diagnostics_enabled_{true};
+
+  /// Parse boolean parameter stored as string in hardware_info
+  bool parse_bool_param(const std::string & value, bool default_value);
 };
 }  // namespace roboclaw_hardware_interface
 
