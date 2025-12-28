@@ -19,6 +19,7 @@ find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(diagnostic_updater REQUIRED)
 find_package(roboclaw_serial REQUIRED)
 
 pluginlib_export_plugin_description_file(hardware_interface roboclaw_hardware_interface.xml)
@@ -41,7 +42,7 @@ target_link_libraries(${ROBOCLAW_HW_LIB_TARGET} roboclaw_serial)
 
 # Add library dependencies
 ament_target_dependencies(${ROBOCLAW_HW_LIB_TARGET}
-  pluginlib hardware_interface rclcpp
+  pluginlib hardware_interface rclcpp diagnostic_updater
   roboclaw_serial
 )
 

@@ -17,12 +17,14 @@
 
 #include <atomic>
 #include <chrono>
+#include <mutex>
 #include <map>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
+#include <diagnostic_updater/diagnostic_updater.hpp>
 #include <roboclaw_serial/interface.hpp>
 
 #include "hardware_interface/system_interface.hpp"
@@ -142,6 +144,9 @@ private:
   /// Publisher for roboclaw status
   rclcpp::Publisher<msg::MotorControllerState>::SharedPtr status_publisher_;
 
+  /// Diagnostic updater
+  std::unique_ptr<diagnostic_updater::Updater> diag_updater_;
+
   /// Background thread for publishing diagnostics
   std::thread status_thread_;
 
@@ -159,6 +164,14 @@ private:
 
   /// Parse hardware parameter for status publish rate
   double status_publish_rate_hz_{10.0};
+
+  /// Cache last status for diagnostics
+  std::mutex status_mutex_;
+  msg::MotorControllerState last_status_msg_;
+  bool has_status_msg_{false};
+
+  /// Fill diagnostic status
+  void produce_diagnostics(diagnostic_updater::DiagnosticStatusWrapper & stat);
 };
 }  // namespace roboclaw_hardware_interface
 

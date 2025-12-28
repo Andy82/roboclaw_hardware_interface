@@ -74,6 +74,11 @@ CallbackReturn RoboClawHardwareInterface::on_init(const HardwareInfo & hardware_
   status_node_ = std::make_shared<rclcpp::Node>("roboclaw_status");
   status_publisher_ = status_node_->create_publisher<msg::MotorControllerState>(
     "roboclaw/status", rclcpp::SystemDefaultsQoS());
+
+  diag_updater_ = std::make_unique<diagnostic_updater::Updater>(status_node_);
+  diag_updater_->setHardwareID(serial_port);
+  diag_updater_->add("RoboClaw Status", this, &RoboClawHardwareInterface::produce_diagnostics);
+
   start_status_thread();
 
   return CallbackReturn::SUCCESS;
@@ -306,6 +311,16 @@ void RoboClawHardwareInterface::publish_status()
   }
 
   status_publisher_->publish(status_msg);
+
+  {
+    std::lock_guard<std::mutex> lk(status_mutex_);
+    last_status_msg_ = status_msg;
+    has_status_msg_ = true;
+  }
+
+  if (diag_updater_) {
+    diag_updater_->force_update();
+  }
 }
 
 void RoboClawHardwareInterface::start_status_thread()
@@ -331,6 +346,48 @@ void RoboClawHardwareInterface::stop_status_thread()
   if (status_thread_.joinable()) {
     status_thread_.join();
   }
+}
+
+void RoboClawHardwareInterface::produce_diagnostics(
+  diagnostic_updater::DiagnosticStatusWrapper & stat)
+{
+  msg::MotorControllerState snapshot;
+  {
+    std::lock_guard<std::mutex> lk(status_mutex_);
+    if (!has_status_msg_) {
+      stat.summary(diagnostic_msgs::msg::DiagnosticStatus::STALE, "No status samples yet");
+      return;
+    }
+    snapshot = last_status_msg_;
+  }
+
+  bool any_error = !snapshot.error_string.empty();
+  stat.summary(
+    any_error ? diagnostic_msgs::msg::DiagnosticStatus::ERROR :
+    diagnostic_msgs::msg::DiagnosticStatus::OK,
+    any_error ? snapshot.error_string : "OK");
+
+  stat.add("M1 P", snapshot.m1_p);
+  stat.add("M1 I", snapshot.m1_i);
+  stat.add("M1 D", snapshot.m1_d);
+  stat.add("M1 QPPS", snapshot.m1_qpps);
+  stat.add("M1 speed", snapshot.m1_current_speed);
+  stat.add("M1 current (A)", snapshot.m1_motor_current);
+  stat.add("M1 encoder", snapshot.m1_encoder_value);
+  stat.add("M1 encoder status", static_cast<int>(snapshot.m1_encoder_status));
+
+  stat.add("M2 P", snapshot.m2_p);
+  stat.add("M2 I", snapshot.m2_i);
+  stat.add("M2 D", snapshot.m2_d);
+  stat.add("M2 QPPS", snapshot.m2_qpps);
+  stat.add("M2 speed", snapshot.m2_current_speed);
+  stat.add("M2 current (A)", snapshot.m2_motor_current);
+  stat.add("M2 encoder", snapshot.m2_encoder_value);
+  stat.add("M2 encoder status", static_cast<int>(snapshot.m2_encoder_status));
+
+  stat.add("Main battery (V)", snapshot.main_battery_voltage);
+  stat.add("Logic battery (V)", snapshot.logic_battery_voltage);
+  stat.add("Temperature (C)", snapshot.temperature);
 }
 
 }  // namespace roboclaw_hardware_interface
