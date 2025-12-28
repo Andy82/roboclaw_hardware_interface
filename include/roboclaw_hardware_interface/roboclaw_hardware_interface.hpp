@@ -15,14 +15,19 @@
 #ifndef ROBOCLAW_HARDWARE_INTERFACE__ROBOCLAW_HARDWARE_INTERFACE_HPP_
 #define ROBOCLAW_HARDWARE_INTERFACE__ROBOCLAW_HARDWARE_INTERFACE_HPP_
 
+#include <atomic>
+#include <chrono>
 #include <map>
 #include <string>
+#include <thread>
 #include <vector>
 
+#include <rclcpp/rclcpp.hpp>
 #include <roboclaw_serial/interface.hpp>
 
 #include "hardware_interface/system_interface.hpp"
 #include "roboclaw_hardware_interface/motor_joint.hpp"
+#include "roboclaw_hardware_interface/msg/motor_controller_state.hpp"
 #include "roboclaw_hardware_interface/roboclaw_unit.hpp"
 
 using hardware_interface::CallbackReturn;
@@ -58,6 +63,8 @@ public:
      * \returns CallbackReturn::ERROR if any error happens or data are missing.
      */
   CallbackReturn on_init(const HardwareInfo & hardware_info) override;
+
+  ~RoboClawHardwareInterface();
 
   /// Exports all state interfaces for this hardware interface.
   /**
@@ -128,6 +135,30 @@ private:
 
   /// Vector of uniqely addressable roboclaw units
   std::vector<RoboClawUnit> roboclaw_units_;
+
+  /// ROS node to publish status information
+  rclcpp::Node::SharedPtr status_node_;
+
+  /// Publisher for roboclaw status
+  rclcpp::Publisher<msg::MotorControllerState>::SharedPtr status_publisher_;
+
+  /// Background thread for publishing diagnostics
+  std::thread status_thread_;
+
+  /// Flag to control the diagnostics publisher thread
+  std::atomic_bool status_thread_running_{false};
+
+  /// Publish diagnostics/status data to ROS
+  void publish_status();
+
+  /// Start publishing diagnostics in the background
+  void start_status_thread();
+
+  /// Stop publishing diagnostics in the background
+  void stop_status_thread();
+
+  /// Parse hardware parameter for status publish rate
+  double status_publish_rate_hz_{10.0};
 };
 }  // namespace roboclaw_hardware_interface
 

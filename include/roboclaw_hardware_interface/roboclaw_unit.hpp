@@ -39,6 +39,8 @@ public:
   // Conver the velocity command to tick rate request and write to the roboclaw
   void write();
 
+  uint8_t get_address() const {return address_;}
+
 private:
   roboclaw_serial::Interface::SharedPtr interface_;
   const uint8_t address_;

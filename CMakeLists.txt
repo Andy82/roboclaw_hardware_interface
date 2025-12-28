@@ -18,6 +18,7 @@ find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 find_package(roboclaw_serial REQUIRED)
 
 pluginlib_export_plugin_description_file(hardware_interface roboclaw_hardware_interface.xml)
@@ -27,23 +28,34 @@ include_directories(
   include
 )
 
-# Add roboclaw hardware interface shared library
-add_library(${PROJECT_NAME} SHARED
+# Add roboclaw hardware interface shared library (target name unique to avoid clash with rosidl)
+set(ROBOCLAW_HW_LIB_TARGET ${PROJECT_NAME}_core)
+add_library(${ROBOCLAW_HW_LIB_TARGET} SHARED
   src/roboclaw_hardware_interface.cpp
   src/roboclaw_unit.cpp
   src/motor_joint.cpp
 )
+set_target_properties(${ROBOCLAW_HW_LIB_TARGET} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 
-target_link_libraries(${PROJECT_NAME} roboclaw_serial)
+target_link_libraries(${ROBOCLAW_HW_LIB_TARGET} roboclaw_serial)
 
 # Add library dependencies
-ament_target_dependencies(${PROJECT_NAME}
-  pluginlib hardware_interface
+ament_target_dependencies(${ROBOCLAW_HW_LIB_TARGET}
+  pluginlib hardware_interface rclcpp
   roboclaw_serial
 )
 
+# Generate message interfaces
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/MotorControllerState.msg"
+)
+
+rosidl_get_typesupport_target(
+  cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(${ROBOCLAW_HW_LIB_TARGET} ${cpp_typesupport_target})
+
 # Install the shared library
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS ${ROBOCLAW_HW_LIB_TARGET}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -67,4 +79,5 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+ament_export_dependencies(rosidl_default_runtime)
 ament_package()
