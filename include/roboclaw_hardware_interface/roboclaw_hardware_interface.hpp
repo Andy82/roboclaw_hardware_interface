@@ -26,6 +26,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <roboclaw_serial/interface.hpp>
+#include <std_msgs/msg/float32.hpp>
 
 #include "hardware_interface/system_interface.hpp"
 #include "roboclaw_hardware_interface/motor_joint.hpp"
@@ -143,6 +144,11 @@ private:
 
   /// Publisher for roboclaw status
   rclcpp::Publisher<msg::MotorControllerState>::SharedPtr status_publisher_;
+
+  /// Publishers for individual status values
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr main_battery_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr logic_battery_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr temperature_publisher_;
 
   /// Diagnostic updater
   std::unique_ptr<diagnostic_updater::Updater> diag_updater_;

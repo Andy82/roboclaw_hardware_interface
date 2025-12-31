@@ -74,6 +74,12 @@ CallbackReturn RoboClawHardwareInterface::on_init(const HardwareInfo & hardware_
   status_node_ = std::make_shared<rclcpp::Node>("roboclaw_status");
   status_publisher_ = status_node_->create_publisher<msg::MotorControllerState>(
     "roboclaw/status", rclcpp::SystemDefaultsQoS());
+  main_battery_publisher_ = status_node_->create_publisher<std_msgs::msg::Float32>(
+    "roboclaw/main_battery_voltage", rclcpp::SystemDefaultsQoS());
+  logic_battery_publisher_ = status_node_->create_publisher<std_msgs::msg::Float32>(
+    "roboclaw/logic_battery_voltage", rclcpp::SystemDefaultsQoS());
+  temperature_publisher_ = status_node_->create_publisher<std_msgs::msg::Float32>(
+    "roboclaw/temperature", rclcpp::SystemDefaultsQoS());
 
   // Diagnostics can be disabled via hardware parameter "diagnostics_enabled" (default: true)
   auto diag_param = hardware_info.hardware_parameters.find("diagnostics_enabled");
@@ -298,6 +304,22 @@ void RoboClawHardwareInterface::publish_status()
     roboclaw_serial::Temperature temp;
     interface_->read(temp, address);
     status_msg.temperature = static_cast<float>(std::get<0>(temp.fields)) / 10.0F;
+
+    std_msgs::msg::Float32 main_battery_msg;
+    std_msgs::msg::Float32 logic_battery_msg;
+    std_msgs::msg::Float32 temperature_msg;
+    main_battery_msg.data = status_msg.main_battery_voltage;
+    logic_battery_msg.data = status_msg.logic_battery_voltage;
+    temperature_msg.data = status_msg.temperature;
+    if (main_battery_publisher_) {
+      main_battery_publisher_->publish(main_battery_msg);
+    }
+    if (logic_battery_publisher_) {
+      logic_battery_publisher_->publish(logic_battery_msg);
+    }
+    if (temperature_publisher_) {
+      temperature_publisher_->publish(temperature_msg);
+    }
 
     roboclaw_serial::Status status_bits;
     interface_->read(status_bits, address);
