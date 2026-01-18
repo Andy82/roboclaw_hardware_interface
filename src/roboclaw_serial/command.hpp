@@ -195,6 +195,10 @@ using SerialTimeout = Request<Command::READ_SERIAL_TIMEOUT, Command::SET_SERIAL_
 // The voltage is returned in 10ths of a volt(eg 300 = 30v)
 using MainBatteryVoltage = Request<Command::READ_MAIN_BATT_VOLT, Command::NONE, uint16_t>;
 
+// Read the logic battery voltage level connected to LB+ and LB- terminals.
+// The voltage is returned in 10ths of a volt (eg 125 = 12.5v).
+using LogicBatteryVoltage = Request<Command::READ_LOGIC_BATT_VOLT, Command::NONE, uint16_t>;
+
 using MainBatteryVoltageCutoff =
   Request<Command::READ_MAIN_BATT_VOLT_SET, Command::SET_MAIN_BATT_VOLT, uint8_t, uint8_t>;
 
@@ -203,6 +207,21 @@ using MainBatteryVoltageCutoff =
 // an analog voltage into a value from 0 to 2047 for the full 2V
 // analog range.
 using EncoderCounters = Request<Command::READ_M1_M2_ENC, Command::NONE, int32_t, int32_t>;
+
+// Read M1 encoder counter (with status byte).
+using EncoderCountM1 = Request<Command::READ_M1_ENC, Command::NONE, int32_t, uint8_t>;
+
+// Read M2 encoder counter (with status byte).
+using EncoderCountM2 = Request<Command::READ_M2_ENC, Command::NONE, int32_t, uint8_t>;
+
+// Read M1 encoder speed in counts per second (with status byte).
+using EncoderSpeedM1 = Request<Command::READ_M1_ENC_SPD, Command::NONE, int32_t, uint8_t>;
+
+// Read M2 encoder speed in counts per second (with status byte).
+using EncoderSpeedM2 = Request<Command::READ_M2_ENC_SPD, Command::NONE, int32_t, uint8_t>;
+
+// Read M1/M2 motor currents in 0.01A.
+using MotorCurrents = Request<Command::READ_M1_M2_CURRENT, Command::NONE, uint16_t, uint16_t>;
 
 // Several motor and quadrature combinations can be used with RoboClaw.
 // In some cases the default PID values will need to be tuned for the
@@ -217,6 +236,12 @@ using VelocityPIDConstantsM1 = Request<
 using VelocityPIDConstantsM2 = Request<
   Command::READ_M2_VEL_PID_CONST, Command::SET_M2_VEL_PID_CONST, int32_t, int32_t, int32_t,
   int32_t>;
+
+// Read board temperature in 0.1C.
+using Temperature = Request<Command::READ_TEMP, Command::NONE, uint16_t>;
+
+// Read status flags.
+using Status = Request<Command::READ_STATUS, Command::NONE, uint16_t>;
 
 // Drive M1 and M2 in the same command using a signed speed value. The
 // sign indicates which direction the motor will turn. This command is
