@@ -21,14 +21,8 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(diagnostic_updater REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(roboclaw_serial REQUIRED)
 
 pluginlib_export_plugin_description_file(hardware_interface roboclaw_hardware_interface.xml)
-
-# Include directories
-include_directories(
-  include
-)
 
 # Add roboclaw hardware interface shared library (target name unique to avoid clash with rosidl)
 set(ROBOCLAW_HW_LIB_TARGET ${PROJECT_NAME}_core)
@@ -39,12 +33,16 @@ add_library(${ROBOCLAW_HW_LIB_TARGET} SHARED
 )
 set_target_properties(${ROBOCLAW_HW_LIB_TARGET} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 
-target_link_libraries(${ROBOCLAW_HW_LIB_TARGET} roboclaw_serial)
+target_include_directories(${ROBOCLAW_HW_LIB_TARGET}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<INSTALL_INTERFACE:include>
+)
 
 # Add library dependencies
 ament_target_dependencies(${ROBOCLAW_HW_LIB_TARGET}
   pluginlib hardware_interface rclcpp diagnostic_updater std_msgs
-  roboclaw_serial
 )
 
 # Generate message interfaces

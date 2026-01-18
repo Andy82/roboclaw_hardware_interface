@@ -32,7 +32,7 @@ git clone https://github.com/dumbotics/roboclaw_hardware_interface.git
 ```
 
 2. **Install Dependencies**
-- Download and install the [roboclaw_serial library](https://github.com/dumbotics/roboclaw_serial). You can either download this directly to your ROS2 workspace and let colcon build it, or you can manually build and install using CMake.
+- The `roboclaw_serial` library is vendored in this repository; no separate install is required.
 - Install all ROS2 requirements:
 ```
 cd ~/ros2_ws
